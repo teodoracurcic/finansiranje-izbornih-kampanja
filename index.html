@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="sr-Latn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Finansiranje izbornih kampanja u Srbiji</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --papir: #f3f5f7;
+  --povrsina: #ffffff;
+  --mastilo: #16212c;
+  --sivo: #5a6571;
+  --linija: #d6dce2;
+  --prihod: #2f5d8a;
+  --prihod-svetlo: #dfe8f1;
+  --rashod: #a53d2c;
+  --rashod-svetlo: #f3e0dc;
+  --fokus: #e0a526;
+  --tekst: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --uzano: "IBM Plex Sans Condensed", "Arial Narrow", Arial, sans-serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); }
+body {
+  margin: 0;
+  background: var(--papir);
+  color: var(--mastilo);
+  font-family: var(--tekst);
+  font-size: 16px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+.okvir { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+
+header.vrh { padding-top: 40px; padding-bottom: 24px; }
+header.vrh h1 {
+  font-family: var(--uzano);
+  font-weight: 600;
+  font-size: clamp(30px, 5vw, 48px);
+  line-height: 1.05;
+  margin: 0 0 12px;
+  letter-spacing: -0.01em;
+  max-width: 18ch;
+}
+header.vrh p { margin: 0; color: var(--sivo); max-width: 62ch; }
+
+.traka {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 5;
+  background: var(--papir);
+  border-bottom: 1px solid var(--linija);
+}
+.traka .okvir { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding-top: 12px; padding-bottom: 12px; }
+.traka .oznaka { color: var(--sivo); font-size: 14px; }
+.godine { display: flex; flex-wrap: wrap; gap: 4px; }
+.godine button, .preklop button {
+  font: inherit;
+  font-size: 15px;
+  border: 1px solid var(--linija);
+  background: var(--povrsina);
+  color: var(--mastilo);
+  padding: 6px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.godine button[aria-pressed="true"], .preklop button[aria-pressed="true"] {
+  background: var(--mastilo);
+  border-color: var(--mastilo);
+  color: #fff;
+}
+button:focus-visible, select:focus-visible, input:focus-visible {
+  outline: 3px solid var(--fokus);
+  outline-offset: 2px;
+}
+
+main section { padding: 40px 0 8px; }
+h2 {
+  font-family: var(--uzano);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 1.15;
+  margin: 0 0 6px;
+}
+.uvod { color: var(--sivo); margin: 0 0 20px; max-width: 70ch; }
+.zbir { margin: 0 0 20px; font-size: 15px; }
+.zbir b { font-weight: 600; }
+.zbir .p { color: var(--prihod); }
+.zbir .r { color: var(--rashod); }
+
+.kontrole { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; margin-bottom: 16px; }
+.preklop { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+label.polje { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 15px; color: var(--sivo); max-width: 100%; }
+label.polje select { flex: 1 1 220px; min-width: 0; max-width: 420px; }
+select {
+  font: inherit;
+  font-size: 15px;
+  padding: 6px 8px;
+  border: 1px solid var(--linija);
+  border-radius: 3px;
+  background: var(--povrsina);
+  color: var(--mastilo);
+  max-width: 100%;
+}
+.legenda { display: flex; gap: 16px; font-size: 14px; color: var(--sivo); }
+.legenda span::before {
+  content: "";
+  display: inline-block;
+  width: 12px; height: 12px;
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+.legenda .lp::before { background: var(--prihod); }
+.legenda .lr::before { background: var(--rashod); }
+
+.poredjenje { background: var(--povrsina); border: 1px solid var(--linija); }
+.red {
+  display: grid;
+  grid-template-columns: minmax(150px, 280px) 1fr;
+  gap: 4px 16px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--linija);
+  align-items: center;
+}
+.red:first-child { border-top: 0; }
+.red .ime { font-weight: 500; line-height: 1.3; }
+.red .ime small { display: block; color: var(--sivo); font-weight: 400; font-size: 13px; }
+.stubici { display: grid; gap: 4px; }
+.stubic { display: grid; grid-template-columns: 1fr 150px; gap: 10px; align-items: center; font-size: 14px; }
+.stubic .osa { height: 12px; background: var(--papir); position: relative; }
+.stubic .osa i { position: absolute; left: 0; top: 0; bottom: 0; display: block; }
+.stubic.p .osa i { background: var(--prihod); }
+.stubic.r .osa i { background: var(--rashod); }
+.stubic .vr { text-align: right; white-space: nowrap; }
+.stubic.p .vr { color: var(--prihod); }
+.stubic.r .vr { color: var(--rashod); }
+
+.godisnje {
+  background: var(--povrsina);
+  border: 1px solid var(--linija);
+  padding: 20px 16px 12px;
+  overflow-x: auto;
+}
+.kolone { display: flex; align-items: flex-end; justify-content: space-around; gap: 28px; min-height: 240px; min-width: min-content; }
+.godina-kol { display: grid; justify-items: center; gap: 8px; }
+.par { display: flex; align-items: flex-end; gap: 4px; height: 200px; }
+.par div { width: 44px; position: relative; }
+.par .p { background: var(--prihod); }
+.par .r { background: var(--rashod); }
+.godina-kol .gl { font-weight: 600; }
+.godina-kol .nema { font-size: 13px; color: var(--sivo); height: 200px; display: flex; align-items: flex-end; }
+
+.tabela-omot { overflow-x: auto; margin-top: 16px; background: var(--povrsina); border: 1px solid var(--linija); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { padding: 8px 12px; text-align: right; border-bottom: 1px solid var(--linija); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; white-space: normal; min-width: 220px; }
+thead th { font-weight: 600; background: var(--papir); }
+tr.medjuzbir td { font-weight: 600; }
+tr.naslov td { font-weight: 600; background: var(--papir); text-align: left; }
+td.nula { color: #a9b1b9; }
+
+.liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 32px 28px; }
+.lista h3 {
+  font-family: var(--uzano);
+  font-weight: 600;
+  font-size: 19px;
+  line-height: 1.25;
+  margin: 0 0 8px;
+  padding-top: 10px;
+  border-top: 3px solid var(--mastilo);
+}
+.lista.p h3 { border-top-color: var(--prihod); }
+.lista.r h3 { border-top-color: var(--rashod); }
+.lista ol { list-style: none; margin: 0; padding: 0; }
+.lista li {
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--linija);
+  font-size: 15px;
+  position: relative;
+  align-items: baseline;
+}
+.lista li .mesto { color: var(--sivo); text-align: right; }
+.lista li .st { line-height: 1.3; }
+.lista li .iz { white-space: nowrap; }
+.lista li .udeo { position: absolute; left: 34px; bottom: -1px; height: 3px; }
+.lista.p li .udeo { background: var(--prihod); }
+.lista.r li .udeo { background: var(--rashod); }
+.lista .prazno { color: var(--sivo); font-size: 15px; padding: 6px 0; }
+.lista .izbor { margin-bottom: 8px; width: 100%; }
+
+.poruka {
+  background: var(--povrsina);
+  border: 1px solid var(--linija);
+  padding: 24px;
+  max-width: 640px;
+}
+.poruka h2 { font-size: 22px; }
+.poruka p { margin: 0 0 12px; }
+.poruka code { background: var(--papir); padding: 1px 4px; }
+
+footer { padding: 48px 0 40px; color: var(--sivo); font-size: 14px; }
+footer p { margin: 0 0 6px; max-width: 75ch; }
+
+[hidden] { display: none !important; }
+
+@media (max-width: 640px) {
+  .red { grid-template-columns: 1fr; }
+  .stubic { grid-template-columns: 1fr 120px; }
+  .liste { grid-template-columns: 1fr; }
+  .kolone { gap: 16px; }
+  .par div { width: 24px; }
+  th:first-child, td:first-child { min-width: 150px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .stubic .osa i, .lista li .udeo { transition: width 0.35s ease; }
+}
+</style>
+</head>
+<body>
+
+<header class="vrh okvir">
+  <h1>Finansiranje izbornih kampanja u Srbiji</h1>
+  <p id="podnaslov">Prihodi i rashodi izbornih lista na parlamentarnim izborima, prema konačnim izveštajima koje su liste predale Agenciji za sprečavanje korupcije. Iznosi su u dinarima.</p>
+</header>
+
+<div class="traka" id="traka" hidden>
+  <div class="okvir">
+    <span class="oznaka" id="godine-oznaka">Izbori</span>
+    <div class="godine" id="godine" role="group" aria-labelledby="godine-oznaka"></div>
+  </div>
+</div>
+
+<main class="okvir">
+
+  <div id="ucitavanje" class="poruka" role="status">
+    <p>Učitavam podatke iz fajla <code>finansiranje kampanje zbirno.xlsx</code>.</p>
+  </div>
+
+  <div id="greska" class="poruka" hidden>
+    <h2>Podaci nisu učitani</h2>
+    <p id="greska-tekst"></p>
+    <p>Stranica čita fajl <code>finansiranje kampanje zbirno.xlsx</code> iz istog foldera. Ako stranicu otvaraš direktno sa računara, pregledač ne dozvoljava automatsko čitanje fajla, pa ga izaberi ručno.</p>
+    <label class="polje">Izaberi Excel fajl <input type="file" id="fajl" accept=".xlsx,.xls"></label>
+  </div>
+
+  <div id="sadrzaj" hidden>
+
+    <section id="poredjenje">
+      <h2>Poređenje stranaka</h2>
+      <p class="uvod" id="poredjenje-uvod"></p>
+      <p class="zbir" id="zbir"></p>
+      <div class="kontrole">
+        <div class="preklop" id="sort" role="group" aria-label="Poređaj po">
+          <button type="button" data-sort="rashodi" aria-pressed="true">Po rashodima</button>
+          <button type="button" data-sort="prihodi" aria-pressed="false">Po prihodima</button>
+          <button type="button" data-sort="razlika" aria-pressed="false">Po razlici</button>
+        </div>
+        <div class="legenda"><span class="lp">Prihodi</span><span class="lr">Rashodi</span></div>
+      </div>
+      <div class="poredjenje" id="poredjenje-lista"></div>
+    </section>
+
+    <section id="stranka">
+      <h2>Jedna stranka kroz godine</h2>
+      <p class="uvod">Prihodi i rashodi izabrane stranke na svim izborima u podacima, sa raspodelom po kategorijama.</p>
+      <div class="kontrole">
+        <label class="polje">Stranka <select id="izbor-stranke"></select></label>
+        <div class="legenda"><span class="lp">Prihodi</span><span class="lr">Rashodi</span></div>
+      </div>
+      <div class="godisnje"><div class="kolone" id="kolone"></div></div>
+      <div class="tabela-omot"><table id="tabela-stranke"></table></div>
+    </section>
+
+    <section id="top">
+      <h2>Top liste</h2>
+      <p class="uvod" id="top-uvod"></p>
+      <div class="liste" id="liste"></div>
+    </section>
+
+  </div>
+</main>
+
+<footer class="okvir">
+  <p>Izvor: konačni izveštaji o troškovima izborne kampanje, portal Agencije za sprečavanje korupcije.</p>
+  <p>Podaci nisu provereni. Zbirovi su preuzeti iz izveštaja lista i mogu sadržati greške koje su liste same napravile.</p>
+</footer>
+
+<script>
+const FAJL = "finansiranje kampanje zbirno.xlsx";
+const TOP_N = 10;
+
+const CIR = "АБВГДЂЕЖЗИЈКЛЉМНЊОПРСТЋУФХЦЧЏШабвгдђежзијклљмнњопрстћуфхцчџш";
+const LAT = ["A","B","V","G","D","Đ","E","Ž","Z","I","J","K","L","Lj","M","N","Nj","O","P","R","S","T","Ć","U","F","H","C","Č","Dž","Š",
+             "a","b","v","g","d","đ","e","ž","z","i","j","k","l","lj","m","n","nj","o","p","r","s","t","ć","u","f","h","c","č","dž","š"];
+const MAPA = Object.fromEntries([...CIR].map((c, i) => [c, LAT[i]]));
+const latinica = s => [...String(s ?? "")].map(c => MAPA[c] ?? c).join("");
+
+const sekcijaNaziv = s => latinica(s).replace(/^[A-ZĐŠČĆŽ]\.\s*/, "").replace(/^Troškovi\s+/i, "").replace(/^./, c => c.toUpperCase());
+
+const fmtCeo = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
+const fmtDec = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const dinari = v => fmtCeo.format(Math.round(v || 0));
+function kratko(v) {
+  const a = Math.abs(v || 0);
+  if (a >= 1e9) return fmtDec.format(v / 1e9) + " mlrd.";
+  if (a >= 1e6) return fmtDec.format(v / 1e6) + " mil.";
+  if (a >= 1e3) return fmtCeo.format(v / 1e3) + " hilj.";
+  return fmtCeo.format(v || 0);
+}
+const godinaTxt = g => `${g}.`;
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+let PRIHODI = [], RASHODI = [], GODINE = [];
+const stanje = { godina: "sve", sort: "rashodi", stranka: null, rashodKat: null };
+
+function kljucevi(red) {
+  const out = {};
+  for (const [k, v] of Object.entries(red)) out[String(k).trim().toLowerCase().replace(/[_\s]+/g, " ")] = v;
+  return out;
+}
+function uzmi(r, ...imena) {
+  for (const i of imena) if (r[i] !== undefined && r[i] !== null && r[i] !== "") return r[i];
+  return null;
+}
+function broj(v) {
+  if (typeof v === "number") return v;
+  if (v == null) return 0;
+  let s = String(v).trim().replace(/\s/g, "");
+  if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+function normalizuj(redovi, saSekcijom) {
+  return redovi.map(kljucevi).map(r => {
+    const lista = uzmi(r, "naziv liste", "lista", "naziv");
+    return {
+      lista: String(lista ?? "").trim(),
+      stranka: String(uzmi(r, "stranka") ?? lista ?? "").trim(),
+      godina: parseInt(uzmi(r, "godina"), 10),
+      sekcija: saSekcijom ? sekcijaNaziv(uzmi(r, "sekcija") ?? "") : "",
+      kategorija: latinica(uzmi(r, "kategorija") ?? "").trim(),
+      iznos: broj(uzmi(r, "iznos")),
+    };
+  }).filter(r => r.stranka && !isNaN(r.godina));
+}
+function nadjiList(wb, rec) {
+  const ime = wb.SheetNames.find(n => n.toLowerCase().includes(rec));
+  return ime ? wb.Sheets[ime] : null;
+}
+
+function obradi(buf) {
+  const wb = XLSX.read(buf, { type: "array" });
+  const sp = nadjiList(wb, "prihod") || wb.Sheets[wb.SheetNames[0]];
+  const sr = nadjiList(wb, "rashod") || wb.Sheets[wb.SheetNames[1]];
+  if (!sp || !sr) throw new Error("U fajlu nisu pronađeni listovi prihodi i rashodi.");
+  PRIHODI = normalizuj(XLSX.utils.sheet_to_json(sp, { defval: null }), false);
+  RASHODI = normalizuj(XLSX.utils.sheet_to_json(sr, { defval: null }), true);
+  if (!PRIHODI.length && !RASHODI.length) throw new Error("Listovi prihodi i rashodi su prazni ili nemaju kolone stranka, godina i iznos.");
+  GODINE = [...new Set([...PRIHODI, ...RASHODI].map(r => r.godina))].sort((a, b) => a - b);
+  pokreni();
+}
+
+async function ucitaj() {
+  try {
+    const odg = await fetch(encodeURI(FAJL), { cache: "no-store" });
+    if (!odg.ok) throw new Error(`Fajl nije pronađen (status ${odg.status}).`);
+    obradi(await odg.arrayBuffer());
+  } catch (e) {
+    prikaziGresku(e.message.includes("fetch") ? "Pregledač nije dozvolio čitanje fajla." : e.message);
+  }
+}
+function prikaziGresku(t) {
+  document.getElementById("ucitavanje").hidden = true;
+  document.getElementById("greska").hidden = false;
+  document.getElementById("greska-tekst").textContent = t;
+}
+document.getElementById("fajl").addEventListener("change", async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  try { obradi(await f.arrayBuffer()); } catch (err) { prikaziGresku(err.message); }
+});
+
+const uGodini = r => stanje.godina === "sve" || r.godina === stanje.godina;
+function zbirPo(redovi, kljuc) {
+  const m = new Map();
+  for (const r of redovi) m.set(kljuc(r), (m.get(kljuc(r)) || 0) + r.iznos);
+  return m;
+}
+function opisGodina() {
+  return stanje.godina === "sve"
+    ? `Zbir za sve izbore u podacima: ${GODINE.map(godinaTxt).join(", ")}`
+    : `Izbori ${godinaTxt(stanje.godina)}`;
+}
+
+function pokreni() {
+  document.getElementById("ucitavanje").hidden = true;
+  document.getElementById("greska").hidden = true;
+  document.getElementById("sadrzaj").hidden = false;
+  document.getElementById("traka").hidden = false;
+
+  const g = document.getElementById("godine");
+  g.innerHTML = [`<button type="button" data-g="sve" aria-pressed="true">Sve godine</button>`,
+    ...GODINE.map(x => `<button type="button" data-g="${x}" aria-pressed="false">${godinaTxt(x)}</button>`)].join("");
+  g.onclick = e => {
+    const b = e.target.closest("button"); if (!b) return;
+    stanje.godina = b.dataset.g === "sve" ? "sve" : parseInt(b.dataset.g, 10);
+    g.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    crtajPoredjenje(); crtajTop();
+  };
+
+  const s = document.getElementById("sort");
+  s.onclick = e => {
+    const b = e.target.closest("button"); if (!b) return;
+    stanje.sort = b.dataset.sort;
+    s.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    crtajPoredjenje();
+  };
+
+  const ukupnoR = zbirPo(RASHODI, r => r.stranka), ukupnoP = zbirPo(PRIHODI, r => r.stranka);
+  const stranke = [...new Set([...ukupnoR.keys(), ...ukupnoP.keys()])]
+    .sort((a, b) => ((ukupnoR.get(b) || 0) + (ukupnoP.get(b) || 0)) - ((ukupnoR.get(a) || 0) + (ukupnoP.get(a) || 0)));
+  const sel = document.getElementById("izbor-stranke");
+  sel.innerHTML = stranke.map(x => `<option>${esc(x)}</option>`).join("");
+  stanje.stranka = stranke[0];
+  sel.onchange = () => { stanje.stranka = sel.value; crtajStranku(); };
+
+  crtajPoredjenje(); crtajStranku(); crtajTop();
+}
+
+function crtajPoredjenje() {
+  const p = zbirPo(PRIHODI.filter(uGodini), r => r.stranka);
+  const r = zbirPo(RASHODI.filter(uGodini), r => r.stranka);
+  const liste = new Map();
+  for (const x of [...PRIHODI, ...RASHODI].filter(uGodini)) {
+    if (!liste.has(x.stranka)) liste.set(x.stranka, new Set());
+    liste.get(x.stranka).add(x.godina);
+  }
+  const redovi = [...liste.keys()].map(s => ({
+    s, p: p.get(s) || 0, r: r.get(s) || 0, g: [...liste.get(s)].sort(),
+  }));
+  redovi.forEach(x => x.d = x.r - x.p);
+  const kljuc = { rashodi: "r", prihodi: "p", razlika: "d" }[stanje.sort];
+  redovi.sort((a, b) => b[kljuc] - a[kljuc]);
+  const max = Math.max(1, ...redovi.map(x => Math.max(x.p, x.r)));
+
+  const sviP = redovi.reduce((a, x) => a + x.p, 0), sviR = redovi.reduce((a, x) => a + x.r, 0);
+  document.getElementById("poredjenje-uvod").textContent =
+    `${opisGodina().replace(/\.$/, "")}. Za svaku stranku prikazani su ukupni prihodi i rashodi njenih lista. Razlika je rashod umanjen za prihod: pozitivna znači da je lista potrošila više nego što je prikupila.`;
+  document.getElementById("zbir").innerHTML =
+    `${redovi.length} stranaka, ukupno <b class="p">${dinari(sviP)}</b> dinara prihoda i <b class="r">${dinari(sviR)}</b> dinara rashoda.`;
+
+  document.getElementById("poredjenje-lista").innerHTML = redovi.map(x => `
+    <div class="red">
+      <div class="ime">${esc(x.s)}${stanje.godina === "sve" ? `<small>${x.g.map(godinaTxt).join(", ")}</small>` : ""}
+        ${stanje.sort === "razlika" ? `<small>Razlika ${x.d >= 0 ? "+" : ""}${dinari(x.d)}</small>` : ""}</div>
+      <div class="stubici">
+        <div class="stubic p" title="Prihodi"><div class="osa"><i style="width:${x.p / max * 100}%"></i></div><span class="vr">${dinari(x.p)}</span></div>
+        <div class="stubic r" title="Rashodi"><div class="osa"><i style="width:${x.r / max * 100}%"></i></div><span class="vr">${dinari(x.r)}</span></div>
+      </div>
+    </div>`).join("");
+}
+
+function crtajStranku() {
+  const s = stanje.stranka;
+  const P = PRIHODI.filter(r => r.stranka === s), R = RASHODI.filter(r => r.stranka === s);
+  const pG = zbirPo(P, r => r.godina), rG = zbirPo(R, r => r.godina);
+  const max = Math.max(1, ...pG.values(), ...rG.values());
+
+  document.getElementById("kolone").innerHTML = GODINE.map(g => {
+    const imaP = pG.has(g), imaR = rG.has(g);
+    if (!imaP && !imaR) return `<div class="godina-kol"><div class="nema">nije učestvovala</div><div class="gl">${godinaTxt(g)}</div></div>`;
+    const vp = pG.get(g) || 0, vr = rG.get(g) || 0;
+    return `<div class="godina-kol">
+      <div class="par">
+        <div class="p" style="height:${vp / max * 100}%" title="Prihodi ${godinaTxt(g)}: ${dinari(vp)} din."></div>
+        <div class="r" style="height:${vr / max * 100}%" title="Rashodi ${godinaTxt(g)}: ${dinari(vr)} din."></div>
+      </div>
+      <div class="gl">${godinaTxt(g)}</div>
+      <div style="font-size:13px;color:var(--prihod)">${kratko(vp)}</div>
+      <div style="font-size:13px;color:var(--rashod)">${kratko(vr)}</div>
+    </div>`;
+  }).join("");
+
+  const godineS = GODINE.filter(g => pG.has(g) || rG.has(g));
+  const celija = v => v ? `<td>${dinari(v)}</td>` : `<td class="nula">0</td>`;
+  const blok = (naslov, redovi, kljucKat) => {
+    const kat = zbirPo(redovi, kljucKat);
+    const imena = [...kat.keys()].filter(k => kat.get(k) !== 0).sort((a, b) => kat.get(b) - kat.get(a));
+    const poGod = new Map(imena.map(k => [k, zbirPo(redovi.filter(r => kljucKat(r) === k), r => r.godina)]));
+    const ukupno = zbirPo(redovi, r => r.godina);
+    return `<tr class="naslov"><td colspan="${godineS.length + 1}">${naslov}</td></tr>` +
+      (imena.length ? imena.map(k => `<tr><td>${esc(k)}</td>${godineS.map(g => celija(poGod.get(k).get(g))).join("")}</tr>`).join("")
+                    : `<tr><td>Nema iznosa</td>${godineS.map(() => celija(0)).join("")}</tr>`) +
+      `<tr class="medjuzbir"><td>Ukupno</td>${godineS.map(g => celija(ukupno.get(g))).join("")}</tr>`;
+  };
+  document.getElementById("tabela-stranke").innerHTML =
+    `<thead><tr><th>Kategorija</th>${godineS.map(g => `<th>${godinaTxt(g)}</th>`).join("")}</tr></thead><tbody>` +
+    blok("Prihodi", P, r => r.kategorija) +
+    blok("Rashodi", R, r => r.kategorija) +
+    `</tbody>`;
+}
+
+function topLista(naslov, vrsta, redovi, opcije = "") {
+  const m = zbirPo(redovi, r => r.stranka);
+  const niz = [...m.entries()].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, TOP_N);
+  const max = niz.length ? niz[0][1] : 1;
+  const telo = niz.length
+    ? `<ol>${niz.map(([s, v], i) => `<li><span class="mesto">${i + 1}.</span><span class="st">${esc(s)}</span><span class="iz">${dinari(v)}</span><span class="udeo" style="width:calc((100% - 34px) * ${v / max})"></span></li>`).join("")}</ol>`
+    : `<p class="prazno">Nijedna stranka nema iznos u ovoj kategoriji za izabrane izbore.</p>`;
+  return `<div class="lista ${vrsta}"><h3>${esc(naslov)}</h3>${opcije}${telo}</div>`;
+}
+
+function crtajTop() {
+  const P = PRIHODI.filter(uGodini), R = RASHODI.filter(uGodini);
+  document.getElementById("top-uvod").textContent =
+    `${opisGodina().replace(/\.$/, "")}. Deset stranaka sa najvećim iznosom u svakoj kategoriji. Kada su izabrane sve godine, iznosi stranke su sabrani za sve izbore.`;
+
+  const html = [];
+  html.push(topLista("Najviše prihoda ukupno", "p", P));
+  html.push(topLista("Najviše rashoda ukupno", "r", R));
+
+  const p = zbirPo(P, r => r.stranka), r = zbirPo(R, r => r.stranka);
+  const razlika = [...new Set([...p.keys(), ...r.keys()])].map(s => ({ stranka: s, iznos: (r.get(s) || 0) - (p.get(s) || 0) }));
+  html.push(topLista("Najviše potrošeno preko prikupljenog", "r", razlika));
+
+  const katP = [...new Set(PRIHODI.map(x => x.kategorija))];
+  for (const k of katP) html.push(topLista(`Prihodi: ${k}`, "p", P.filter(x => x.kategorija === k)));
+
+  const sek = [...new Set(RASHODI.map(x => x.sekcija))];
+  for (const s of sek) html.push(topLista(`Rashodi: ${s}`, "r", R.filter(x => x.sekcija === s)));
+
+  const katR = [...zbirPo(RASHODI, x => x.kategorija).entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  if (!stanje.rashodKat || !katR.includes(stanje.rashodKat)) stanje.rashodKat = katR[0];
+  const izbor = `<select class="izbor" id="izbor-kat" aria-label="Kategorija rashoda">${katR.map(k => `<option${k === stanje.rashodKat ? " selected" : ""}>${esc(k)}</option>`).join("")}</select>`;
+  html.push(topLista("Rashodi po kategoriji", "r", R.filter(x => x.kategorija === stanje.rashodKat), izbor));
+
+  document.getElementById("liste").innerHTML = html.join("");
+  document.getElementById("izbor-kat").onchange = e => { stanje.rashodKat = e.target.value; crtajTop(); document.getElementById("izbor-kat").focus(); };
+}
+
+ucitaj();
+</script>
+</body>
+</html>
